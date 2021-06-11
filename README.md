@@ -8,4 +8,6 @@ All screenshots I took while we were advancing through the class can be found un
 
 My `settings.xml` file along with the parent `pom.xml` we created in order facilitate the creation of the custom policy can also be found at the root of this repository.
 
+Once you clone the repo, you can set a workspace to the top level folder, then import the projects individually using Studio.
+
 **NOTE**: This repo will be removed in about a week.  Please download all that you need.
