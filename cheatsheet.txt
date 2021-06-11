@@ -11,8 +11,6 @@ Prep
 8) cp -r ~/Desktop/CourseWare/L2/Integrations/20210429/APDevPRInts4.3_studentFiles_29apr2021/repository/* ~/.m2/repository/
 9) cp ~/Desktop/CourseWare/L2/Integrations/20210429/APDevPRInts4.3_studentFiles_29apr2021/etc/settings.xml ~/.m2
 
-* GitHub CLI token: c3a0ddc77229e06cd4b9c7b0d73c5de8290c1562
-
 * Brew setup for JDK 1.8
 export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 
