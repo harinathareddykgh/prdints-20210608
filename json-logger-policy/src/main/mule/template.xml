@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:http-policy="http://www.mulesoft.org/schema/mule/http-policy"
+  xmlns:http-transform="http://www.mulesoft.org/schema/mule/http-policy-transform"
+  xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http-policy http://www.mulesoft.org/schema/mule/http-policy/current/mule-http-policy.xsd
+http://www.mulesoft.org/schema/mule/http-policy-transform http://www.mulesoft.org/schema/mule/http-policy-transform/current/mule-http-policy-transform.xsd">
+
+  <json-logger:config
+    name="JSON_Logger_Config"
+    applicationName="json-logger-policy"
+    applicationVersion="1.0.0"
+    environment="{{{environment}}}" />
+
+  <http-policy:proxy name="{{{policyId}}}-custom-policy">
+    <http-policy:source>
+
+      <!-- You place all Mule XML code that you want to execute before your API code -->
+
+      {{#if beforeRequest}}
+      <json-logger:logger
+        config-ref="JSON_Logger_Config"
+        tracePoint="START"
+        message="{{{message}}}" />
+      {{/if}}
+
+      <http-policy:execute-next />
+
+      <!-- You place all Mule XML code that you want to execute after your API code -->
+
+      {{#if afterRequest}}
+      <json-logger:logger
+        config-ref="JSON_Logger_Config"
+        tracePoint="END"
+        message="{{{message}}}" />
+      {{/if}}
+
+    </http-policy:source>
+  </http-policy:proxy>
+</mule>

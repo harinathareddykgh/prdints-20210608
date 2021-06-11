@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="checkin_payload_json" format="json">
+      <types:shape format="weave" example="examples/checkin-payload-example.json"><![CDATA[%dw 2.0
+
+type checkin_payload_json = {|
+  lastName: String, 
+  numBags: Number {"typeId": "int"}
+|} {"example": "{\\\"lastName\\\":\\\"Smith\\\",\\\"numBags\\\":2}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#db827ee6-5204-458e-9c97-d501b4a41775">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="checkin_payload_json"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#c8fd50da-74fb-4dd3-8b3e-d62caf0e63d4"/>
+  <types:enrichment select="#f9f8c1e7-046e-4e00-aadb-4eccdcbcab5f"/>
+</types:mule>

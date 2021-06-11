@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+  <global-property name="env" value="dev" doc:name="Default env to dev"/>
+  <!-- 1st def of a property is preserved, so env-dependent takes priority over env-independent -->
+  <configuration-properties file="${env}-properties.yaml" doc:name="Env Config Props"/>
+  <secure-properties:config file="${env}-secure-properties.yaml" key="${encrypt.key}" name="secureEnvPropsConfig" doc:name="Secure Env Config Props">
+    <secure-properties:encrypt algorithm="Blowfish"/>
+  </secure-properties:config>
+  <configuration-properties file="properties.yaml" doc:name="Config Props"/>
+  <json-logger:config applicationName="${app.name}" applicationVersion="${app.version}" environment="${env}" prettyPrint="${logger.prettyPrint}" disabledFields="${logger.disabledFields}" name="jlogConfig" doc:name="JSON Logger Config"/>
+  <tls:context name="apiTLSContext" doc:name="API TLS Context">
+    <tls:key-store type="${tls.keystore.type}" path="${tls.keystore.path}" password="${secure::tls.keystore.password}" keyPassword="${secure::tls.keystore.keyPassword}" alias="${tls.keystore.alias}"/>
+  </tls:context>
+  <http:listener-config name="apiHttpListenerConfig">
+    <http:listener-connection host="0.0.0.0" protocol="HTTPS" port="${api.port}" tlsContext="apiTLSContext"/>
+  </http:listener-config>
+  <apikit:config name="apiConfig" api="${api.raml}" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus"/>
+  <api-gateway:autodiscovery apiId="${api.id}" flowRef="api-main" doc:name="API Autodiscovery"/>
+  <global-property doc:name="Global Property" doc:id="11c0d614-a810-4a77-aba4-7a9dede772ab" name="encrypt.key" value="secure12345" />
+  <tls:context name="SOAP_TLS_Context" doc:name="TLS Context" doc:id="81ae30bd-b5bc-49b3-bc10-11397a60cf05" >
+    <tls:trust-store path="certs/wsdl-client-trust.p12" password="mule12345" type="pkcs12"/>
+    <tls:key-store type="pkcs12" path="certs/clients-to-tngaa-nonprod-public.p12" alias="client" keyPassword="mule666soft666client" password="mule666soft666client" />
+  </tls:context>
+  <http:request-config name="SOAP_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="687c498e-6c44-4957-8cc0-e077c19589b0" >
+    <http:request-connection protocol="HTTPS" tlsContext="SOAP_TLS_Context" />
+  </http:request-config>
+  <wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="85d0f9ac-f3b5-497b-b117-05c70c79abc9" >
+    <wsc:connection wsdlLocation="https://tngaa-nonprod-public.lb.anypointdns.net/flights-management-dev/api/v1/FlightsManagementService?wsdl" service="FlightsManagementService" port="FlightsManagementPort" address="https://tngaa-nonprod-public.lb.anypointdns.net/flights-management-dev/api/v1/FlightsManagementService" >
+      <wsc:custom-transport-configuration >
+        <wsc:http-transport-configuration requesterConfig="SOAP_HTTP_Request_configuration" />
+      </wsc:custom-transport-configuration>
+    </wsc:connection>
+  </wsc:config>
+  <vm:config name="VM_Config" doc:name="VM Config" doc:id="8c5bd950-f92b-4e9d-946c-1603c4a0b90e" >
+    <vm:queues >
+      <vm:queue queueName="cancellations-queue" queueType="PERSISTENT" />
+      <vm:queue queueName="cancellations-dlq" queueType="PERSISTENT" />
+    </vm:queues>
+  </vm:config>
+  <anypoint-mq:config name="Anypoint_MQ_Config" doc:name="Anypoint MQ Config" doc:id="2dbb6376-7fa1-4e34-899a-b57448d0bdce" >
+    <anypoint-mq:connection clientId="7914d0756c9448b8ba66f0d1947a53e8" clientSecret="6b8a9dC681Bc422EB57cE0315a2db1D3" />
+  </anypoint-mq:config>
+</mule>

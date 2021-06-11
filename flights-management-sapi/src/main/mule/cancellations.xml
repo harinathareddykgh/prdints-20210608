@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd">
+  <sub-flow name="publish-cancellations-dlq" doc:id="7e971ff7-a44b-466c-b265-593a1a6151a4" >
+    <vm:publish queueName="cancellations-dlq" doc:name="cancellations-dlq" doc:id="9e07b5e6-326e-466c-a446-8542ae9a6e84" config-ref="VM_Config" />
+  </sub-flow>
+  <flow name="register-cancellation-callback" doc:id="ccbb6bdf-9126-4887-bb6d-34dfe5ddc7bb" >
+    <scheduler doc:name="Scheduler" doc:id="8875c560-82cb-427a-8295-5adf835b7cba" >
+      <scheduling-strategy >
+        <fixed-frequency frequency="3650000" timeUnit="DAYS"/>
+      </scheduling-strategy>
+    </scheduler>
+    <json-logger:logger doc:name="Register Cancellation Callback" doc:id="beade22a-19ad-434b-82db-178235afa262" config-ref="jlogConfig" message="Register Cancellation Callback"/>
+  </flow>
+  <flow name="receive-cancellations" doc:id="368afee9-780e-4606-9fc5-121e560a3533" >
+    <http:listener doc:name="POST /api/cancelFlight" doc:id="9e3c8d3b-8f4d-474a-95b9-f180cfb66105" config-ref="apiHttpListenerConfig" path="/api/cancelFlight" allowedMethods="POST">
+      <http:response statusCode="202" >
+        <http:body ><![CDATA[OK]]></http:body>
+      </http:response>
+    </http:listener>
+    <json-logger:logger doc:name="START Receive Cancellations" doc:id="abf4e691-2485-441d-a764-b599c47097f6" config-ref="jlogConfig" message="START Receive Cancellations"/>
+    <xml-module:validate-schema doc:name="Validate schema" doc:id="46dee6cb-6d82-4c01-845c-bfd09cbf0c6c" schemas="cancellation-request-body.xsd"/>
+    <vm:publish doc:name="cancellations-queue" doc:id="fcdc2897-3927-4063-bbc0-1c46be9b6334" config-ref="VM_Config" queueName="cancellations-queue"/>
+    <json-logger:logger doc:name="END Receive Cancellations" doc:id="ec07eaa6-84b1-4656-8aba-333ce5bf8a64" config-ref="jlogConfig" message="END Receive Cancellations" tracePoint="END"/>
+  </flow>
+  <flow name="process-cancellations" doc:id="03e04ba2-64d1-4f24-b266-0133924c2945" >
+    <vm:listener queueName="cancellations-queue" doc:name="cancellations-queue" doc:id="92e75b59-8603-4f13-b8f7-50b887c54153" config-ref="VM_Config" transactionalAction="ALWAYS_BEGIN">
+      <redelivery-policy maxRedeliveryCount="2" idExpression="#[correlationId]" />
+    </vm:listener>
+    <json-logger:logger doc:name="START Process Cancellations" doc:id="ec6d4ee2-3cb9-4093-bc75-a9203af8ca09" config-ref="jlogConfig" message="START Process Cancellations"/>
+    <try doc:name="Try" doc:id="c5759a40-2543-4f85-9cc3-9269ec5f431f" transactionalAction="BEGIN_OR_JOIN">
+      <ee:transform doc:name="Transform Message" doc:id="2bd24626-33bf-4ad9-b837-792f212d9cb6">
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	pnr: payload.CancellationNotification.PNR,
+	lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+      <anypoint-mq:publish doc:name="cancelled-flights-exchg-dev" doc:id="ebfe9ee5-ff86-4fdd-adeb-57611c3dbe9d" config-ref="Anypoint_MQ_Config" destination="cancelled-flights-exchg-dev" messageId="#[correlationId]"/>
+      <error-handler >
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1da356de-c9a5-4ef8-a525-02ad2af1d26b" type="ANYPOINT-MQ:DESTINATION_NOT_FOUND, ANYPOINT-MQ:ILLEGAL_BODY, EXPRESSION">
+          <flow-ref doc:name="publish-cancellations-dlq" doc:id="82331038-3832-450a-ac39-23aaff418ab9" name="publish-cancellations-dlq"/>
+        </on-error-continue>
+      </error-handler>
+    </try>
+    <json-logger:logger doc:name="END Process Cancellations" doc:id="dcff4b24-13a6-4d45-a3fa-135f32109b34" config-ref="jlogConfig" message="END Process Cancellations"/>
+    <error-handler >
+      <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8e28968e-4491-48f6-a039-ab20d4b81d9d" type="MULE:REDELIVERY_EXHAUSTED">
+        <flow-ref doc:name="publish-cancellations-dlq" doc:id="6a2c856b-57cd-443e-b168-e4d86fe0c0c3" name="publish-cancellations-dlq" />
+        <json-logger:logger doc:name="END Cancellations Dead Letter Queue" doc:id="be18a0d4-6215-48f3-9435-9eb7166c0e35" config-ref="jlogConfig" message="END Cancellations Dead Letter Queue"/>
+      </on-error-continue>
+    </error-handler>
+  </flow>
+</mule>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+  <import file="health-common.xml" doc:name="Import health-common.xml"/>
+  <sub-flow name="check-all-dependencies-are-alive">
+    <http:request method="GET" doc:name="Flights: GET /alive" doc:id="d1c7855f-e36d-4a4f-b4d9-ab1167cbd5af" url="https://tngaa-flights-management-sapi-dev.us-e1.cloudhub.io/alive" responseTimeout="950">
+      <http:response-validator >
+        <http:success-status-code-validator values="200" />
+      </http:response-validator>
+    </http:request>
+    <http:request method="GET" doc:name="Pass: GET /alive" doc:id="0c223e94-c6ea-4169-b4ac-1e4e618e0e53" url="https://tngaa-passenger-data-sapi-dev.us-e1.cloudhub.io/alive" responseTimeout="950">
+      <http:response-validator >
+        <http:success-status-code-validator values="200" />
+      </http:response-validator>
+    </http:request>
+    <http:request method="GET" doc:name="Paypal: GET /alive" doc:id="4bc55e7a-9443-4340-a30a-ae57b8c5853a" url="https://tngaa-paypal-sapi-dev.us-e1.cloudhub.io/alive" responseTimeout="950">
+      <http:response-validator >
+        <http:success-status-code-validator values="200" />
+      </http:response-validator>
+    </http:request>
+  </sub-flow>
+</mule>

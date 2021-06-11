@@ -1,0 +1,363 @@
+**************************
+Prep
+
+1) JDK 1.8 is installed
+2) Remove/Rename the .m2 folder
+3) mvn JDK is 1.8
+4) All in the same version of Studio and same version of installation plugins
+5) Studio: Set the JDK to the same one we will be using from CLI
+6) Studio: Set maven to the one we will be using from CLI
+7) Studio: Set the XML editor settings
+8) cp -r ~/Desktop/CourseWare/L2/Integrations/20210429/APDevPRInts4.3_studentFiles_29apr2021/repository/* ~/.m2/repository/
+9) cp ~/Desktop/CourseWare/L2/Integrations/20210429/APDevPRInts4.3_studentFiles_29apr2021/etc/settings.xml ~/.m2
+
+* GitHub CLI token: c3a0ddc77229e06cd4b9c7b0d73c5de8290c1562
+
+* Brew setup for JDK 1.8
+export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+
+* Useful commands
+/usr/libexec/java_home
+
+* Module 1
+
+
+**************************
+WT 1-1
+
+Import/build/install apps-commons, check-in-papi
+
+<AsyncLogger name="org.mule.service.http.impl.service.HttpMessageLogger" level="DEBUG"/>
+
+-M-Dencrypt.key=secure12345 
+-M-Danypoint.platform.gatekeeper=disabled
+
+curl -X PUT -H "Content-Type: application/json" -d "{\"lastName\": \"Smith\",\"numBags\":2}" https://localhost:8082/api/v1/tickets/PNR123/checkin -i -k
+
+curl -X PUT -H "Content-Type: application/json" -d "{\"payerID\": \"PID1\",\"paymentID\": \"PMT1\"}" https://localhost:8082/api/v1/tickets/PNR123/paymentApproval -i -k
+
+** health.xml
+
+https://tngaa-flights-management-sapi-dev.us-e1.cloudhub.io/alive
+
+https://tngaa-passenger-data-sapi-dev.us-e1.cloudhub.io/alive
+
+https://tngaa-paypal-sapi-dev.us-e1.cloudhub.io/alive
+
+Inspect threads in the output
+
+Set timeouts
+
+M.T. Nygard, Release It!
+
+
+**************************
+**************************
+**************************
+WT 1-2
+
+anyairline-exchgv/ExchgAnyA1rl1neV1ewer
+
+client_id: 4252d93a34134a95901d0529dfd29137
+client_secret: 3e99E40e7Dea4a3288391030A0625E6b
+
+https://tngaa-flights-management-sapi-dev.us-e1.cloudhub.io/api/v1/tickets/PNR123/checkin
+
+https://tngaa-passenger-data-sapi-dev.us-e1.cloudhub.io/api/v1
+
+https://tngaa-paypal-sapi-dev.us-e1.cloudhub.io/api/v1
+
+not vars.ticket.ticketHolderLastName == vars.checkin.lastName
+APP:LASTNAME_MISSMATCH
+
+not vars.passenger.lastName == vars.checkin.lastName
+APP:LASTNAME_MISSMATCH
+
+APP:CANT_UPDATE_CHECKINS
+
+Flights:checkin
+output application/json
+---
+{
+	lastName: vars.checkin.lastName,
+	numBags: vars.checkin.numBags
+}
+
+APP:CANT_UPDATE_CHECKIN
+
+Passenger:createflightbylno
+output application/json
+---
+{
+	flight_date: vars.ticket.flightDate,
+	flight_no: vars.ticket.flightNo,
+	origin: vars.ticket.origin,
+	destination: vars.ticket.destination,
+	date_checkin:  now() >> "UTC"
+}
+
+vars.passenger.loyaltyNo
+
+APP:CANT_CREATE_PASSENGER_FLIGHT
+
+%dw 2.0
+output application/json
+var numBags = vars.checkIn.numBags
+var bagRate = 33.3
+---
+{
+	description: "Check-In of $(numBags) bags at USD $(bagRate) each.",
+	amount: bagRate * numBags 
+}
+
+**************************
+**************************
+**************************
+WT 1-3
+
+message: "Internal server error"
+
+**************************
+**************************
+**************************
+WT 1-4
+
+-M-Dencrypt.key=secure12345
+-M-Danypoint.platform.gatekeeper=disabled
+
+curl -X POST -H "Content-Type: application/json" -d "{\"amount\": 12.34, \"description\": \"something\"}" https://localhost:8082/api/v1/payments -i -k
+
+curl -X PUT -H "Content-Type: application/json" -d '{"payerID": "STJ8222K092ST"}' https://localhost:8082/api/v1/payments/PAY-1B56960729604235TKQQIYVY/approval -i -k
+
+curl -X POST -H "Accept: application/json" -H "Accept-Language: en_US" -u "APP-80ANYAIRLINE8184JT3:1929FHDUAL8392K9ABKSNMM" -d "grant_type=client_credentials" https://training-paypal-fake-api-sandbox.us-e2.cloudhub.io/v1/oauth2/token -i -k
+
+curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer l2k28ss.sid3fjfd5_Zsrq9cK9hNsqrSTfu8ji334EEVW83hjskShnodE" -d '{ "intent":"sale", "payer":{ "payment_method":"paypal" }, "transactions": [ { "amount":{ "total":"80.00", "currency":"USD" }, "description": "Check-In Baggage.", "custom": "ANYAIRLINE_90048630024435", "invoice_number": "48787589673", "payment_options":{ "allowed_payment_method":"INSTANT_FUNDING_SOURCE" }, "soft_descriptor":"ANYAIRLINE BAGGAGE" } ], "note_to_payer":"Be happy." }' https://training-paypal-fake-api-sandbox.us-e2.cloudhub.io/v1/payments/payment -i
+
+
+
+**************************
+**************************
+**************************
+WT 1-5
+
+* Toy Project for mutual TLS
+keytool -genkey -deststoretype pkcs12 -keyalg RSA -alias server -keystore server-store.p12 -storepass password -validity 360 -keysize 2048 -dname "cn=localhost, ou=Training, o=MuleSoft, c=US"
+keytool -genkey -deststoretype pkcs12 -keyalg RSA -alias middle -keystore middle-store.p12 -storepass mpassword -validity 360 -keysize 2048 -dname "cn=localhost, ou=Training, o=MuleSoft, c=US"
+
+* Actual WT:
+curl -X PUT -H 'Content-Type: application/json' -d '{"lastName":"Mule","numBags":2}' https://localhost:8082/api/v1/tickets/PNR123/checkin -i -k
+curl https://localhost:8082/api/v1/tickets/PNR123 -i -k
+
+curl https://mule-worker-tngaa-flights-management-dev.us-e2.cloudhub.io:8092/api/v1/FlightsManagementService?wsdl -i -k
+
+wsdl: https://mule-worker-tngaa-flights-management-dev.us-e2.cloudhub.io:8092/api/v1/FlightsManagementService?wsdl
+service: FlightsManagementService
+port: FlightsManagementPort
+address: https://mule-worker-tngaa-flights-management-dev.us-e2.cloudhub.io:8092/api/v1/FlightsManagementService
+
+wsdl: https://tngaa-nonprod-public.lb.anypointdns.net/flights-management-dev/api/v1/FlightsManagementService?wsdl
+service: FlightsManagementService
+port: FlightsManagementPort
+address: https://tngaa-nonprod-public.lb.anypointdns.net/flights-management-dev/api/v1/FlightsManagementService
+
+keytool -v -noprompt -importcert -file ./flights-management-sapi/src/test/resources/certs/tngaa-nonprod-public-pub-key-cert.pem -alias server -keystore ./flights-management-sapi/src/main/resources/certs/wsdl-client-trust.p12 -storetype pkcs12 -storepass mule12345
+
+path="certs/clients-to-tngaa-nonprod-public.p12" 
+password="mule666soft666client" 
+keyPassword="mule666soft666client" 
+alias="client"
+
+**************************
+**************************
+**************************
+WT 1-6
+
+curl -X POST -H 'Content-Type:application/xml' -d '<CancellationNotification><PNR>PNR123</PNR><PassengerLastName>Mule</PassengerLastName></CancellationNotification>' https://localhost:8082/api/cancelFlight -i -k
+
+callbackUrl: "https://$(Mule::p('fullDomain'))/api/cancelFlight"
+
+
+* Module 2
+
+**************************
+WT 2-1
+
+curl -X POST -H 'Content-Type:application/xml' -d '<CancellationNotification><PNR>PNR123</PNR><PassengerLastName>Mule</PassengerLastName></CancellationNotification>' https://localhost:8082/api/cancelFlight -i -k
+
+* Queue names:
+-- cancellations
+-- dlq
+
+**************************
+WT 2-2
+
+%dw 2.0
+output application/json
+---
+{
+  pnr: payload.CancellationNotification.PNR,
+  lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
+}
+
+MULE:REDELIVERY_EXHAUSTED
+
+**************************
+WT 2-3
+
+
+https://mq-us-east-1.anypoint.mulesoft.com/api/v1
+
+46ac3273df6043ae9502b62d5eba71cc / 44396992F4884d178AbD2F2DB599073e
+
+cancelled-flights-exchg-dev
+
+**************************
+**************************
+**************************
+WT 2-4
+
+https://mq-us-east-1.anypoint.mulesoft.com/api/v1
+
+a3dead0d64904db3b5d5818b8f50da8d / 57AF77965a984161820AA7153739a727
+
+curl -ik -X POST -H 'Content-Type:application/xml' -d '<CancellationNotification><PNR>PNR123</PNR><PassengerLastName>Mule</PassengerLastName></CancellationNotification>' https://tngaa-flights-management-sapi-dev.us-e1.cloudhub.io/api/cancelFlight
+
+{
+  pnr: payload.pnr,
+  lastName: payload.lastNameOfPassenger 
+}
+
+<AsyncLogger name="com.mulesoft.mq" level="DEBUG" />
+
+* Module 3
+
+**************************
+WT 3-1
+
+^(application|text)\/xml.*$
+
+curl -X POST -H 'Content-Type:text/plain' -d 'Plain text' https://localhost:8082/api/cancelFlight -i -k
+curl -X POST -H 'Content-Type:application/xml' -d '<CancellationNotification><PNR>PNR123</PNR><PassengerLastName>Mule</PassengerLastName></CancellationNotification>' https://localhost:8082/api/cancelFlight -i -k
+
+**************************
+WT 3-2
+
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="CancellationNotification">
+    <xs:complexType>
+    <xs:sequence>
+     <xs:element type="xs:string" name="PNR" minOccurs="1"/>
+     <xs:element type="xs:string" name="PassengerLastName" minOccurs="1"/>
+    </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+
+<xs:any processContents="lax" minOccurs="0" />
+
+**************************
+WT 3-3
+
+{
+"definitions": {},
+"$schema": "http://json-schema.org/draft-07/schema#", "$id":
+"http://training.mulesoft.com/FlightCancelledEvent.schema.json", "type": "object",
+"title": "FlightCancelledEvent",
+"properties": {
+     "pnr": {
+       "$id": "#/properties/pnr",
+       "type": "string",
+       "examples": [
+"PNR123" ]
+     },
+     "lastNameOfPassenger": {
+       "$id": "#/properties/lastNameOfPassenger",
+       "type": "string",
+       "examples": [
+"Mule" ]
+} },
+   "required": ["pnr", "lastNameOfPassenger"]
+}
+
+* Module 4
+
+**************************
+WT 4-1
+
+-H "X-CORRELATION-ID: GEORGE-123456789"
+
+MULE:COMPOSITE_ROUTING
+error.errorMessage.payload.results pluck $$ as Number
+error.errorMessage.payload.failures pluck $$ as Number
+
+
+**************************
+WT 4-2
+
+**************************
+WT 4-3
+
+Until Successful
+
+* Module 5
+
+**************************
+WT 5-1
+
+curl -X PUT -H 'Content-Type: application/json' -d '{ "payerID": "STJ8222K092ST", "paymentID": "PAY-1AKD7482FAB9STATKO" }' https://localhost:8082/api/v1/tickets/PNR123/paymentApproval 
+
+
+* os:store payload:
+
+{
+	checkin: vars.checkIn,
+	ticket: vars.ticket
+}
+
+* DW right are os:retrieve
+
+%dw 2.0
+output application/json
+---
+{
+  PNR: vars.PNR,
+  airportArrive: payload.ticket.destination,
+  class: payload.ticket.class,
+  bagsCount: payload.checkin.numBags,
+  lastName: payload.ticket.ticketHolderLastName,
+  seat: payload.ticket.seat,
+  flightDate: payload.ticket.flightDate,
+  flight: payload.ticket.flightNo,
+  boarding: payload.ticket.boarding,
+  airportDepart: payload.ticket.origin,
+  gate: payload.ticket.gate,
+  depart: payload.ticket.depart
+}
+
+**************************
+WT 5-2
+
+**************************
+WT 5-3
+
+
+* Module 6
+
+**************************
+WT 6-1
+
+mvn -B -f bom.xml archetype:generate -DarchetypeGroupId=org.mule.extensions -DarchetypeArtifactId=mule-extensions-xml-archetype -DarchetypeVersion=1.2.0 -DgroupId=com.mulesoft.training.anyairline -DartifactId=resilience-mule-extension -DmuleConnectorName=resilience-mule-extension -DextensionName=resilience
+
+Inside client's pom:
+    <dependency>
+      <groupId>com.mulesoft.training.anyairline</groupId>
+      <artifactId>resilience-mule-extension</artifactId>
+      <version>1.0.1-SNAPSHOT</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+
+**************************
+WT 6-2
+
+mvn archetype:generate -DarchetypeGroupId=org.mule.tools -DarchetypeArtifactId=api-gateway-custom-policy-archetype  -DarchetypeVersion=1.2.0 -DgroupId=com.mulesoft.training.anyairline -DartifactId=json-logger-policy -Dversion=1.0.0-SNAPSHOT  -Dpackage=mule-policy -DpolicyDescription='Policy for logging messages in the JSON format' -DpolicyName='JSON Message Logging'
+

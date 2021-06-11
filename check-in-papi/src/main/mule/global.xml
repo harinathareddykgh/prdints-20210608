@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule
+  xmlns:os="http://www.mulesoft.org/schema/mule/os"
+  xmlns:pay-pal-sapi="http://www.mulesoft.org/schema/mule/pay-pal-sapi"
+  xmlns:passenger-data-sapi="http://www.mulesoft.org/schema/mule/passenger-data-sapi"
+  xmlns:flights-management-sapi="http://www.mulesoft.org/schema/mule/flights-management-sapi"
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+  xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+  xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+  xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+  xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/flights-management-sapi http://www.mulesoft.org/schema/mule/flights-management-sapi/current/mule-flights-management-sapi.xsd
+http://www.mulesoft.org/schema/mule/passenger-data-sapi http://www.mulesoft.org/schema/mule/passenger-data-sapi/current/mule-passenger-data-sapi.xsd
+http://www.mulesoft.org/schema/mule/pay-pal-sapi http://www.mulesoft.org/schema/mule/pay-pal-sapi/current/mule-pay-pal-sapi.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+  <global-property
+    name="env"
+    value="dev"
+    doc:name="Default env to dev" />
+  <!-- 1st def of a property is preserved, so env-dependent takes priority over env-independent -->
+  <configuration-properties
+    file="${env}-properties.yaml"
+    doc:name="Env Config Props" />
+  <secure-properties:config
+    file="${env}-secure-properties.yaml"
+    key="${encrypt.key}"
+    name="secureEnvPropsConfig"
+    doc:name="Secure Env Config Props">
+    <secure-properties:encrypt algorithm="Blowfish" />
+  </secure-properties:config>
+  <configuration-properties
+    file="properties.yaml"
+    doc:name="Config Props" />
+  <json-logger:config
+    applicationName="${app.name}"
+    applicationVersion="${app.version}"
+    environment="${env}"
+    prettyPrint="${logger.prettyPrint}"
+    disabledFields="${logger.disabledFields}"
+    name="jlogConfig"
+    doc:name="JSON Logger Config" />
+  <tls:context
+    name="apiTLSContext"
+    doc:name="TLS Context">
+    <tls:key-store
+      type="${tls.keystore.type}"
+      path="${tls.keystore.path}"
+      password="${secure::tls.keystore.password}"
+      keyPassword="${secure::tls.keystore.keyPassword}"
+      alias="${tls.keystore.alias}" />
+  </tls:context>
+  <http:listener-config
+    name="apiHttpListenerConfig"
+    doc:name="API Listener HTTP Config">
+    <http:listener-connection
+      host="0.0.0.0"
+      protocol="HTTPS"
+      port="${api.port}"
+      tlsContext="apiTLSContext" />
+  </http:listener-config>
+  <apikit:config
+    name="apiConfig"
+    api="${api.spec}"
+    outboundHeadersMapName="outboundHeaders"
+    httpStatusVarName="httpStatus"
+    doc:name="APIKit Config" />
+  <api-gateway:autodiscovery
+    apiId="${api.id}"
+    flowRef="api-main"
+    doc:name="API Autodiscovery" />
+  <global-property
+    doc:name="Global Property"
+    doc:id="7364adf4-fa68-45ed-aa1b-afed1d007ec7"
+    name="encrypt.key"
+    value="secure12345" />
+  <flights-management-sapi:config
+    name="Flights_Management_SAPI_Config"
+    doc:name="Flights Management SAPI Config"
+    doc:id="a24d1336-63c4-422d-8b5f-0c261673d7cb"
+    property_username="4252d93a34134a95901d0529dfd29137"
+    property_password="3e99E40e7Dea4a3288391030A0625E6b"
+    property_host="tngaa-flights-management-sapi-dev.us-e1.cloudhub.io"
+    property_basePath="/api/v1"
+    property_responseTimeout="3000" />
+  <passenger-data-sapi:config
+    name="Passenger_Data_SAPI_Config"
+    doc:name="Passenger Data SAPI Config"
+    doc:id="2a43552d-9212-4092-a580-dc76350bf8bf"
+    property_username="4252d93a34134a95901d0529dfd29137"
+    property_password="3e99E40e7Dea4a3288391030A0625E6b"
+    property_host="tngaa-passenger-data-sapi-dev.us-e1.cloudhub.io"
+    property_basePath="/api/v1"
+    property_responseTimeout="3000" />
+  <pay-pal-sapi:config
+    name="PayPal_SAPI_Config"
+    doc:name="PayPal SAPI Config"
+    doc:id="504d6fee-0f67-4143-850b-3b23172bf654"
+    property_username="4252d93a34134a95901d0529dfd29137"
+    property_password="3e99E40e7Dea4a3288391030A0625E6b"
+    property_host="tngaa-paypal-sapi-dev.us-e1.cloudhub.io"
+    property_responseTimeout="3000" />
+  <os:object-store name="checkinDetailsObjectStore" doc:name="Object store" doc:id="28ccc00a-f6d4-4c05-ae7d-889eb2f0af91" maxEntries="5000" entryTtl="10" entryTtlUnit="DAYS" expirationIntervalUnit="DAYS" />
+  <os:object-store name="passCacheObjectStore" doc:name="Object store" doc:id="4cd17259-26b8-4e83-b411-6b9beed8c857" maxEntries="2000" entryTtl="60" entryTtlUnit="MINUTES" expirationInterval="10" />
+  <ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="bec1cf8f-584e-44c7-a5b2-ad512c11038e" keyGenerationExpression="#[vars.PNR]" objectStore="passCacheObjectStore" />
+</mule>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd  http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd  http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+  <flow name="receive-cancellations" doc:id="1ac280d5-6f20-4dca-bb09-8c049085a742" >
+    <anypoint-mq:subscriber doc:name="cancelled-flights-mobile-queue-dev" doc:id="4ef13fc8-3acf-449f-96dc-61bfaf72d1a3" config-ref="Anypoint_MQ_Config" destination="cancelled-flights-mobile-queue-dev" acknowledgementMode="MANUAL" circuitBreaker="Circuit_breaker">
+    </anypoint-mq:subscriber>
+    <json-logger:logger doc:name="START Receive Cancellations" doc:id="8ca381f6-c3ce-4bb5-b2d8-5d2cea7f6245" config-ref="jlogConfig" message="START Receive Cancellations"/>
+    <json:validate-schema doc:name="Validate schema" doc:id="b0f20584-2c1f-4048-8bc7-36d50b76f4cb" schema="ticket-message-body-schema.json" />
+    <set-variable value="#[attributes.ackToken]" doc:name="ackToken" doc:id="321dce92-3962-4b62-95b1-e1adb12c2a5a" variableName="ackToken"/>
+    <ee:transform doc:name="Transform Message" doc:id="33752977-6fff-4851-9165-8176d2d3101c" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	pnr: payload.pnr,
+	lastName: payload.lastNameOfPassenger
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+    <anypoint-mq:ack doc:name="Ack" doc:id="482a8c60-bb71-416e-890f-ba1f56fe792f" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken]"/>
+    <json-logger:logger doc:name="END Receive Cancellations" doc:id="d2da4d5e-2eaf-4e6b-9480-5f6880dbd145" config-ref="jlogConfig" message="END Receive Cancellations" tracePoint="END"/>
+    <error-handler >
+      <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9d91c892-0950-4bb4-b79e-ffd1dad6bb1a" >
+        <anypoint-mq:nack doc:name="Nack" doc:id="19c48c96-5e65-47fd-8cf6-e28332df5788" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken]"/>
+        <json-logger:logger doc:name="END in Error Receive Cancellations" doc:id="0987f033-7541-44dc-a1b5-61287db7d958" config-ref="jlogConfig" message="END in Error Receive Cancellations" tracePoint="END"/>
+      </on-error-propagate>
+    </error-handler>
+  </flow>
+  <!-- ... -->
+</mule>

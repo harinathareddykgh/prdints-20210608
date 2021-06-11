@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:pay-pal-sapi="http://www.mulesoft.org/schema/mule/pay-pal-sapi" xmlns:passenger-data-sapi="http://www.mulesoft.org/schema/mule/passenger-data-sapi" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:flights-management-sapi="http://www.mulesoft.org/schema/mule/flights-management-sapi" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/flights-management-sapi http://www.mulesoft.org/schema/mule/flights-management-sapi/current/mule-flights-management-sapi.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/passenger-data-sapi http://www.mulesoft.org/schema/mule/passenger-data-sapi/current/mule-passenger-data-sapi.xsd
+http://www.mulesoft.org/schema/mule/pay-pal-sapi http://www.mulesoft.org/schema/mule/pay-pal-sapi/current/mule-pay-pal-sapi.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+  <sub-flow name="passenger-data-sapi" doc:id="282e605c-4ef3-45e5-bb5a-f9aa16028e4d" >
+    <ee:cache doc:name="Cache" doc:id="d0f7e38d-d6ad-49be-83d0-bc860c2d5f07" cachingStrategy-ref="Caching_Strategy">
+      <passenger-data-sapi:get-passengers doc:name="Get passengers" doc:id="70305f71-452c-4b76-add4-c61698a119d6" config-ref="Passenger_Data_SAPI_Config" passport-no="#[vars.ticket.ticketHolderPassPortNo]"/>
+    </ee:cache>
+  </sub-flow>
+  <sub-flow name="compensating-for-failed-calls" doc:id="1df8bdac-d84a-4759-bb71-dc02f47aea23" >
+    <choice doc:name="Choice" doc:id="4c23c765-0ff2-4632-8c73-fe184f979897">
+            <when expression="#[vars.successes contains 0]">
+              <logger level="INFO" doc:name="Logger" doc:id="0f696cef-8fd5-4871-9508-c4d69f0d391b" message="&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Compansate Route0 &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;" />
+            </when>
+          </choice>
+    <choice doc:name="Choice" doc:id="84c9a66b-8887-470a-8e5d-f01f870be686">
+            <when expression="#[vars.successes contains 1]">
+              <logger level="INFO" doc:name="Logger" doc:id="03a79613-85c7-4a2d-b23a-0340bb7802f6" message="&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Compansate Route1 &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;" />
+            </when>
+          </choice>
+    <choice doc:name="Choice" doc:id="4ec7193e-e769-4dc0-890c-4373d634713c">
+            <when expression="#[vars.successes contains 2]">
+              <logger level="INFO" doc:name="Logger" doc:id="983b0f8e-e001-4c26-bb8b-d3fe5e469332" message="&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Compansate Route2 &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;" />
+            </when>
+          </choice>
+  </sub-flow>
+  <sub-flow name="validate-request-data" doc:id="352fb03d-cc64-4a06-8602-048197e43c33" >
+    <try doc:name="Try" doc:id="8e8ab80f-91d2-46c6-bb99-3acd0ebd23a9" >
+      <until-successful maxRetries="2" doc:name="Until Successful" doc:id="eae73525-7b8a-4bdf-a056-a74ba7f09229" millisBetweenRetries="10000">
+        <try doc:name="Try" doc:id="6ae26fc8-9dc0-41df-97a4-6c83cac9ace3" >
+          <flights-management-sapi:get-ticket-by-pnr doc:name="Get ticket by pnr" doc:id="9ced8b36-9299-47c3-8900-a5bc60f57442" config-ref="Flights_Management_SAPI_Config" pnr="#[vars.PNR]" target="ticket">
+          <error-mapping sourceType="FLIGHTS-MANAGEMENT-SAPI:CONNECTIVITY" targetType="APP:TRANSIENT" />
+          <error-mapping sourceType="FLIGHTS-MANAGEMENT-SAPI:RETRY_EXHAUSTED" targetType="APP:TRANSIENT" />
+          <error-mapping sourceType="FLIGHTS-MANAGEMENT-SAPI:SERVICE_UNAVAILABLE" targetType="APP:TRANSIENT" />
+          <error-mapping sourceType="FLIGHTS-MANAGEMENT-SAPI:TOO_MANY_REQUESTS" targetType="APP:TRANSIENT" />
+        </flights-management-sapi:get-ticket-by-pnr>
+          <set-variable value="#[true]" doc:name="success" doc:id="c6a45005-818d-4ee1-abb6-9f397564c757" variableName="success" />
+          <error-handler >
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="35990c7e-201c-4563-9cf4-3d064acda329" type="APP:TRANSIENT">
+              <logger level="INFO" doc:name="Logger" doc:id="d21ae89d-c35d-4d85-b97d-7b58b5055a7f" message="&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; TRANSIENT ERROR DETECTED &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;"/>
+            </on-error-propagate>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f3604c72-d6d9-44fa-a5f8-901a5ec25470" >
+              <set-variable value="#[false]" doc:name="success" doc:id="63deb681-5588-473c-b0cb-a380d72cd9b8" variableName="success"/>
+            </on-error-continue>
+          </error-handler>
+        </try>
+    </until-successful>
+      <error-handler >
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c3970b05-2545-4aa3-9153-717f1066c58d" type="RETRY_EXHAUSTED">
+          <set-variable value="#[false]" doc:name="success" doc:id="30b0daf3-9b07-4b9f-88f7-213a0734ac16" variableName="success"/>
+        </on-error-continue>
+      </error-handler>
+    </try>
+    <validation:is-true doc:name="success" doc:id="cb8c85e9-2637-449b-b263-d59087d46a83" expression="#[vars.success]"/>
+    <validation:is-true doc:name="last name matches" doc:id="d38f15a1-72d0-49b5-aadd-ad89f8eaec36" expression="#[vars.checkIn.lastName == vars.ticket.ticketHolderLastName]">
+      <error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:LASTNAME_MISSMATCH" />
+    </validation:is-true>
+    <flow-ref doc:name="passenger-data-sapi" doc:id="aac9e744-fa27-4f14-a643-5f59477e1c14" name="passenger-data-sapi" target="passenger"/>
+    <validation:is-true doc:name="last name matches" doc:id="d7e502dd-ec54-455c-975c-8ddf4298c299" expression="#[vars.checkIn.lastName == vars.passenger.lastName]" />
+  </sub-flow>
+  <flow name="check-in-by-pnr" doc:id="db827ee6-5204-458e-9c97-d501b4a41775">
+    <json-logger:logger message="#['Checking-in by PNR: ' ++ (vars.PNR default '')]" config-ref="jlogConfig" doc:name="START">
+      <json-logger:content><![CDATA[#[output application/json ---
+            {
+                pnr: vars.PNR,
+                payload: payload,
+                attributes: attributes
+            }]]]></json-logger:content>
+    </json-logger:logger>
+    <set-variable variableName="checkIn" value="#[payload]" doc:name="checkIn"/>
+    <flow-ref doc:name="validate-request-data" doc:id="a7ee1165-1a45-4e7c-88c2-c346d25b2604" name="validate-request-data" />
+    <os:store doc:name="PNR" doc:id="f1cdf237-2789-44aa-a080-0a873964c059" key="#[vars.PNR]" objectStore="checkinDetailsObjectStore">
+      <os:value ><![CDATA[#[{
+	checkin: vars.checkIn,
+	ticket: vars.ticket
+}]]]></os:value>
+    </os:store>
+    <try doc:name="Try" doc:id="5557d017-c290-4beb-9f0e-fcc8a0b6118f" >
+      <scatter-gather doc:name="Scatter-Gather" doc:id="f96d7b75-b9c7-4860-97e6-e77c008810f0">
+      <route>
+        <flow-ref name="check-in-flights-management" doc:name="check-in-flights-management" />
+      </route>
+      <route>
+        <flow-ref name="register-passenger-data" doc:name="register-passenger-data" />
+      </route>
+      <route>
+        <flow-ref name="create-payment-for-bags" doc:name="create-payment-for-bags" />
+      </route>
+    </scatter-gather>
+      <ee:transform>
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	paymentID: payload."2".payload.paymentID
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+      <error-handler>
+        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7bfe98a8-50dc-4108-bd55-2a3fbb088b4a" type="COMPOSITE_ROUTING">
+          <ee:transform doc:name="Set failures successes vars" doc:id="f9f8c1e7-046e-4e00-aadb-4eccdcbcab5f" >
+            <ee:message >
+            </ee:message>
+            <ee:variables >
+              <ee:set-variable variableName="failures" ><![CDATA[%dw 2.0
+output application/java
+---
+error.errorMessage.payload.failures pluck $$ as Number]]></ee:set-variable>
+              <ee:set-variable variableName="successes" ><![CDATA[%dw 2.0
+output application/java
+---
+error.errorMessage.payload.results pluck $$ as Number]]></ee:set-variable>
+            </ee:variables>
+          </ee:transform>
+          <flow-ref doc:name="compensating-for-failed-calls" doc:id="fb1313d8-7415-4976-be16-0f6ddc9b7a12" name="compensating-for-failed-calls" />
+        </on-error-propagate>
+      </error-handler>
+    </try>
+    <json-logger:logger message="Checked-in by PNR" tracePoint="END" config-ref="jlogConfig" doc:name="END"/>
+  </flow>
+  <flow name="check-in-flights-management">
+    <flights-management-sapi:update-checkins-by-pnr doc:name="Update checkins by pnr" doc:id="71a8b75a-bfed-4007-a006-f50c5b5a3abf" config-ref="Flights_Management_SAPI_Config" pnr="#[vars.PNR]">
+      <flights-management-sapi:update-checkins-by-pnr-request-data ><![CDATA[#[vars.checkin]]]></flights-management-sapi:update-checkins-by-pnr-request-data>
+    </flights-management-sapi:update-checkins-by-pnr>
+    <error-handler >
+      <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="b350a4ba-2c64-427b-b730-06f707124df0" >
+        <raise-error doc:name="APP:CANT_UPDATE_CHECKINS" doc:id="75fe08f4-1ca8-4635-9c76-b870c721ed0b" type="APP:CANT_UPDATE_CHECKINS"/>
+      </on-error-continue>
+    </error-handler>
+  </flow>
+  <flow name="register-passenger-data">
+    <passenger-data-sapi:create-flight-by-lno doc:name="Create flight by lno" doc:id="b9e76d56-7c25-421a-8d7d-0f9c68dd089e" config-ref="Passenger_Data_SAPI_Config" lno="#[vars.passenger.loyaltyNo]">
+      <passenger-data-sapi:create-flight-by-lno-request-data ><![CDATA[#[output application/json
+---
+{
+	flight_date: vars.ticket.flightDate,
+	flight_no: vars.ticket.flightNo,
+	origin: vars.ticket.origin,
+	destination: vars.ticket.destination,
+	date_checkin: now() >> "UTC"
+}]]]></passenger-data-sapi:create-flight-by-lno-request-data>
+    </passenger-data-sapi:create-flight-by-lno>
+    <error-handler >
+      <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d27dcd7e-8cc9-4834-9e0d-e482f598e577" >
+        <raise-error doc:name="APP:CANT_CREATE_FLIGHT" doc:id="b1c8d011-eec5-4c96-997f-e7fd983fe06e" type="APP:CANT_CREATE_FLIGHT"/>
+      </on-error-continue>
+    </error-handler>
+  </flow>
+  <flow name="create-payment-for-bags">
+    <pay-pal-sapi:create-payment doc:name="Create payment" doc:id="97a18d38-3007-4463-b747-767fc759cdc2" config-ref="PayPal_SAPI_Config">
+      <pay-pal-sapi:create-payment-request-data ><![CDATA[#[output application/json
+---
+{
+	amount: 100,
+	description: "Baggage payment"
+}]]]></pay-pal-sapi:create-payment-request-data>
+    </pay-pal-sapi:create-payment>
+    <error-handler>
+      <on-error-continue>
+        <raise-error type="APP:CANT_CREATE_PAYMENT" doc:name="APP:CANT_CREATE_PAYMENT"/>
+      </on-error-continue>
+    </error-handler>
+  </flow>
+  <flow name="payment-approval-by-pnr">
+    <json-logger:logger message="#['Approving payment by PNR: ' ++ (vars.PNR default '')]" config-ref="jlogConfig" doc:name="START">
+      <json-logger:content><![CDATA[#[output application/json ---
+            {
+                pnr: vars.PNR,
+                payload: payload,
+                attributes: attributes
+            }]]]></json-logger:content>
+    </json-logger:logger>
+    <os:contains doc:name="PNR" doc:id="38d92325-50f2-410a-8027-62c00c41c035" key="#[vars.PNR]" objectStore="checkinDetailsObjectStore" target="exists"/>
+    <validation:is-true doc:name="Is true" doc:id="eb95467b-c4f5-4c17-b72f-9dea3aa8f4a3" expression="#[vars.exists]"/>
+    <flow-ref name="update-approvals" doc:name="update-approvals"/>
+    <flow-ref name="get-boarding-pass" doc:name="get-boarding-pass"/>
+    <json-logger:logger message="Approved payment by PNR" tracePoint="END" config-ref="jlogConfig" doc:name="END"/>
+  </flow>
+  <flow name="update-approvals">
+    <pay-pal-sapi:update-approvals-by-payment-id doc:name="Update approvals by payment id" doc:id="391a5a56-7ac7-41b8-9a4e-edbca0973fcf" config-ref="PayPal_SAPI_Config" payment-id="#[payload.paymentID]">
+      <pay-pal-sapi:update-approvals-by-payment-id-request-data ><![CDATA[#[output application/json
+---
+{
+	payerID: payload.payerID
+}]]]></pay-pal-sapi:update-approvals-by-payment-id-request-data>
+    </pay-pal-sapi:update-approvals-by-payment-id>
+  </flow>
+  <flow name="get-boarding-pass">
+    <os:retrieve doc:name="PNR" doc:id="5d1d0488-9b00-4e68-874f-1e8275907cdd" key="#[vars.PNR]" objectStore="checkinDetailsObjectStore"/>
+    <ee:transform>
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  PNR: vars.PNR,
+  airportArrive: payload.ticket.destination,
+  class: payload.ticket.class,
+  bagsCount: payload.checkin.numBags,
+  lastName: payload.checkin.lastName,
+  seat: payload.ticket.seat,
+  flightDate: payload.ticket.flightDate,
+  flight: payload.ticket.flightNo,
+  boarding: payload.ticket.boarding,
+  airportDepart: payload.ticket.origin,
+  gate: payload.ticket.gate,
+  depart: payload.ticket.depart
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+  </flow>
+</mule>

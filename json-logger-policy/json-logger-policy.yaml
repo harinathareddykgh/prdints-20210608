@@ -1,0 +1,36 @@
+id: JSON Message Logging
+name: JSON Message Logging
+description: Policy for logging messages in the JSON format
+category: Custom
+type: custom
+resourceLevelSupported: true
+encryptionSupported: false
+standalone: true
+requiredCharacteristics: []
+providedCharacteristics: []
+configuration:
+  - propertyName: message
+    name: Message
+    type: expression
+    description: |
+      Expression dumped as part of the logging entry
+  - propertyName: environment
+    name: Environment
+    type: string
+    description: |
+      Name of the environment where this policy is applied. type: string
+  - propertyName: beforeRequest
+    name: Before Calling API
+    type: boolean
+    optional: false
+    defaultValue: true
+    description: |
+      Whether to log before the API call or not
+  - propertyName: afterRequest
+    name: After Calling API
+    type: boolean
+    optional: true
+    defaultValue: false
+    description: |
+      Whether to log after the API call or not
+      

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module
+  name="resilience"
+  prefix="resilience"
+  doc:description="This module relies in runtime provided components"
+
+  xmlns="http://www.mulesoft.org/schema/mule/module"
+  xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+  xmlns:tns="http://www.mulesoft.org/schema/mule/resilience"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/module http://www.mulesoft.org/schema/mule/module/current/mule-module.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/resilience http://www.mulesoft.org/schema/mule/resilience/current/mule-resilience.xsd">
+
+  <operation name="is-endpoint-alive">
+
+    <parameters>
+
+      <parameter
+        name="url"
+        displayName="URL"
+        type="string"
+        use="REQUIRED" />
+
+      <parameter
+        name="responseTimeout"
+        displayName="Response timeout in milliseconds"
+        type="number"
+        use="OPTIONAL"
+        defaultValue="#[2000]" />
+
+      <parameter
+        name="maxRetries"
+        displayName="Maximum number of retries"
+        type="number"
+        use="OPTIONAL"
+        defaultValue="#[3]" />
+
+      <parameter
+        name="millisBetweenRetries"
+        displayName="Time in milliseconds between retries"
+        type="number"
+        use="OPTIONAL"
+        defaultValue="#[1000]" />
+
+
+    </parameters>
+
+    <body>
+
+      <mule:try>
+        <mule:until-successful
+          maxRetries="#[vars.maxRetries]"
+          millisBetweenRetries="#[vars.millisBetweenRetries]">
+          <http:request
+            method="GET"
+            url="#[vars.url]"
+            responseTimeout="#[vars.responseTimeout]">
+            <http:response-validator>
+              <http:success-status-code-validator values="200" />
+            </http:response-validator>
+          </http:request>
+        </mule:until-successful>
+        <mule:set-variable
+          value="#[true]"
+          variableName="success" />
+        <mule:error-handler>
+          <mule:on-error-continue
+            enableNotifications="true"
+            logException="true">
+            <mule:set-variable
+              value="#[false]"
+              variableName="success" />
+          </mule:on-error-continue>
+        </mule:error-handler>
+      </mule:try>
+      <mule:set-payload value="#[vars.success]" />
+
+    </body>
+
+    <output type="boolean" />
+
+  </operation>
+
+</module>

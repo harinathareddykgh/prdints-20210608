@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+  xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+  xmlns:resilience="http://www.mulesoft.org/schema/mule/resilience"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/resilience http://www.mulesoft.org/schema/mule/resilience/current/mule-resilience.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+  <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="7537523d-861c-43ea-b69c-3efe47e7f61c" >
+    <http:listener-connection host="0.0.0.0" port="8081" />
+  </http:listener-config>
+  <flow name="resilience-testing" doc:id="c415ef7a-3fa7-4de6-8b15-f3ae46131c6f" >
+    <http:listener doc:name="Listener" doc:id="2ed7008d-6735-49bc-ae3d-b1197fe1a669" config-ref="HTTP_Listener_config" path="/test"/>
+    <resilience:is-endpoint-alive doc:name="Is endpoint alive" doc:id="954b90d8-a717-471c-9670-3f656c0b8ada" url="https://Xtngaa-flights-management-sapi-dev.us-e1.cloudhub.io/alive"/>
+    <ee:transform doc:name="Transform Message" doc:id="47b9c667-7758-4ad1-ab3b-8cc706d678d3" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+  </flow>
+  <flow
+    name="resilience-testbedFlow"
+    doc:id="768f0b7c-4d26-4b33-83bc-b684e0cf584d">
+    <try
+      doc:name="Try"
+      doc:id="9534e289-3d12-4da4-b4fa-86b4a6bcea25">
+      <until-successful
+        maxRetries="2"
+        doc:name="Until Successful"
+        doc:id="97ee7ce3-fe00-4d86-a491-1d9a1b278e59"
+        millisBetweenRetries="5000">
+        <http:request
+          method="GET"
+          doc:name="Request"
+          doc:id="c646c1dd-1905-4a76-94e0-0dcea6a4d026"
+          url="https://tngaa-flights-management-sapi-dev.us-e1.cloudhub.io/alive"
+          responseTimeout="2000">
+          <http:response-validator>
+            <http:success-status-code-validator values="200" />
+          </http:response-validator>
+        </http:request>
+      </until-successful>
+      <set-variable
+        value="#[true]"
+        doc:name="Set Variable"
+        doc:id="df53c4bf-c43d-45c3-a09c-d07dab37ebd7"
+        variableName="success" />
+      <error-handler >
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f47447d7-5261-4ce3-bef9-3041a3d9c73e" >
+          <set-variable value="#[false]" doc:name="Set Variable" doc:id="8eb8d10f-7335-4f89-b043-36f1d1087850" variableName="success"/>
+        </on-error-continue>
+      </error-handler>
+    </try>
+    <set-payload value="#[vars.success]" doc:name="Set Payload" doc:id="d0b2fad0-91b6-4274-bc89-0404010a2ded" />
+  </flow>
+</mule>

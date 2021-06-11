@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+  <http:listener-config name="Server_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="987a94ba-e03d-48ef-b37c-d31030dceb68" >
+    <http:listener-connection protocol="HTTPS" host="0.0.0.0" port="8082" tlsContext="Server_TLS_Context"/>
+  </http:listener-config>
+  <tls:context name="Server_TLS_Context" doc:name="TLS Context" doc:id="5409702e-9bdb-494c-8ccb-4cc3b8bc4a4d" >
+    <tls:trust-store path="client-store.p12" password="cpassword" type="pkcs12" />
+    <tls:key-store type="pkcs12" path="server-store.p12" alias="server" keyPassword="password" password="password" />
+  </tls:context>
+  <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d50b42f4-5c11-4fa6-8acf-de331ef10a9c" >
+    <http:listener-connection host="0.0.0.0" port="8081" />
+  </http:listener-config>
+  <tls:context name="Client_TLS_Context" doc:name="TLS Context" doc:id="ef4bfac8-e3a0-480f-badd-cf60efd720a3" >
+    <tls:trust-store path="server-store.p12" password="password" type="pkcs12"/>
+    <tls:key-store type="pkcs12" path="client-store.p12" alias="client" keyPassword="cpassword" password="cpassword" />
+  </tls:context>
+  <http:request-config name="Server_HTTPS_Request_configuration" doc:name="HTTP Request configuration" doc:id="7c4aa0cd-cd9a-4a3b-9ded-1948b7f80598" >
+    <http:request-connection protocol="HTTPS" tlsContext="Client_TLS_Context" />
+  </http:request-config>
+  <flow name="client" doc:id="63516f2a-a4e5-437e-9b34-596818982ddd" >
+    <http:listener doc:name="GET /client" doc:id="67cffd96-1c70-40e8-8d8c-d5e6a2a14037" config-ref="HTTP_Listener_config" path="/client" allowedMethods="GET"/>
+    <http:request method="GET" doc:name="GET /server" doc:id="84daef5d-8cbc-4d81-aad5-086dd4a95e24" url="https://localhost:8082/server" config-ref="Server_HTTPS_Request_configuration"/>
+  </flow>
+  <flow name="server" doc:id="87e3653d-3fe8-4372-af53-4cbe5415c8f4" >
+    <http:listener doc:name="GET /server" doc:id="a0a5ba16-cc67-47c4-b642-51b965329df3" config-ref="Server_HTTP_Listener_config" path="/server" allowedMethods="GET"/>
+    <ee:transform doc:name="Transform Message" doc:id="315020f3-88ce-4c4d-94b5-73daa1b4b1d1" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	test: "passed"
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+  </flow>
+</mule>

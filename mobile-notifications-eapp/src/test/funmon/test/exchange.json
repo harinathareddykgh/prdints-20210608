@@ -1,0 +1,10 @@
+{
+"groupId":"${aa.ap.orgid}",
+"assetId":"${project.artifactId}-test-funmon",
+"version":"7.0.0",
+"name":"${project.artifactId}-test-funmon",
+"classifier":"bat-test",
+"apiVersion":null,
+"tags":null,
+"dependencies":null
+}
