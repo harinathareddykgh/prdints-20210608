@@ -17,4 +17,4 @@ reporters:
   - type: Slack
     options:
       SLACK_WEBHOOK: >-
-        https://hooks.slack.com/services/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
+        http://localhost
